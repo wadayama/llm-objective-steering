@@ -1,0 +1,27 @@
+# =====================================================================
+# Publication policy: this repository publishes only the minimum set
+# needed to RUN THE INTEGRATED DEMO. Everything else stays local —
+# research write-ups (notes/, revision_notes/), the experiment scripts
+# for exp01-exp04, the benchmark suite, and all raw results.
+#
+# Whitelist approach: ignore everything, then re-include the published
+# files explicitly. New files therefore default to NOT published; add
+# an explicit "!" entry below when something should be released.
+# =====================================================================
+
+*
+
+# ---- repository / environment ----
+!.gitignore
+!.python-version
+!LICENSE
+!README.md
+!pyproject.toml
+!uv.lock
+
+# ---- the demo (self-contained: run.py imports only core and steering) ----
+!exp05-integrated-demo/
+exp05-integrated-demo/*
+!exp05-integrated-demo/core.py
+!exp05-integrated-demo/run.py
+!exp05-integrated-demo/steering.py
