@@ -25,6 +25,7 @@ import math
 import os
 import textwrap
 import threading
+import urllib.request
 
 import numpy as np
 import torch
@@ -69,6 +70,12 @@ DEFAULT_POLICY = "Maximize total throughput while ensuring all channels get some
 LLM_BASE_URL = "http://localhost:1234/v1"
 LLM_API_KEY = "lm-studio"
 LLM_TIMEOUT = 30.0
+# Pin the model with DEMO_LLM_MODEL when LM Studio holds more than one;
+# otherwise a loaded, non-embedding model is selected automatically.
+LLM_MODEL = os.environ.get("DEMO_LLM_MODEL", "").strip()
+# Reasoning models spend this budget on hidden thought before they answer, and
+# a reply truncated mid-thought arrives with empty content. Raise it for those.
+LLM_MAX_TOKENS = int(os.environ.get("DEMO_MAX_TOKENS", "2048"))
 
 device = torch.device("cpu")
 
@@ -248,11 +255,32 @@ class LLMController:
     def _resolve_model(self):
         if self._model_name is not None:
             return self._model_name
+        self._model_name = LLM_MODEL or self._auto_select_model()
+        return self._model_name
+
+    def _auto_select_model(self):
+        """Pick a loaded, non-embedding model.
+
+        /v1/models lists everything LM Studio knows about -- embeddings and
+        unloaded models included -- so taking the first entry picks the wrong
+        one as soon as more than one model is around. LM Studio's own endpoint
+        reports type and load state; fall back to the OpenAI-compatible list.
+        """
+        for m in self._list_native_models():
+            if m.get("state") == "loaded" and m.get("type") != "embeddings":
+                return m["id"]
         models = self._client.models.list()
         if models.data:
-            self._model_name = models.data[0].id
-            return self._model_name
+            return models.data[0].id
         raise RuntimeError("No models loaded in LM Studio")
+
+    def _list_native_models(self):
+        url = LLM_BASE_URL.rsplit("/v1", 1)[0] + "/api/v0/models"
+        try:
+            with urllib.request.urlopen(url, timeout=5) as r:
+                return json.loads(r.read()).get("data", [])
+        except Exception:
+            return []
 
     # ---- policy management ----
     def set_policy(self, text: str, shared: SharedState):
@@ -347,8 +375,18 @@ class LLMController:
                 model=model_name,
                 messages=[{"role": "system", "content": self.sys_prompt},
                           {"role": "user", "content": msg}],
-                temperature=0.0, max_tokens=2048)
-            raw = resp.choices[0].message.content.strip()
+                temperature=0.0, max_tokens=LLM_MAX_TOKENS)
+            choice = resp.choices[0]
+            raw = (choice.message.content or "").strip()
+            if not raw:
+                # A reasoning model can spend the whole budget on hidden
+                # thought and answer with nothing; name that instead of
+                # failing downstream with an opaque JSON error.
+                raise RuntimeError(
+                    f"model hit the {LLM_MAX_TOKENS}-token limit "
+                    "(raise DEMO_MAX_TOKENS)"
+                    if choice.finish_reason == "length"
+                    else "model returned an empty reply")
             spec_new, tau_new, tau_ch_new, p_cmd, reasoning = parse_response(raw)
 
             # Guardrail: unconstrained min_power = "shut everything down",
@@ -711,6 +749,8 @@ def main():
     print(f"N={N}, P_total={P_TOTAL_DEFAULT}, K_hist={K_HIST}, "
           f"dual update every {DUAL_EVERY_STEPS} steps")
     print(f"LLM endpoint: {LLM_BASE_URL}")
+    print(f"LLM model: {LLM_MODEL or '(auto: first loaded non-embedding model)'}"
+          f", max_tokens={LLM_MAX_TOKENS}")
     shared = SharedState()
     llm_ctrl = LLMController()
     estimator = QPSKMonteCarloEstimator()

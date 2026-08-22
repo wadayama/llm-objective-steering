@@ -95,8 +95,33 @@ curl -s http://localhost:1234/v1/models
 ```
 
 If a model ID comes back, you are ready. Note that **starting the server and
-loading a model are two separate steps** — you need both. The demo does not
-hardcode a model name; it uses the **first model** returned by `/v1/models`.
+loading a model are two separate steps** — you need both.
+
+### Choosing the model
+
+The demo hardcodes no model name. By default it asks LM Studio which models are
+loaded and takes the first one that is not an embedding model. Keep several
+models around and you will want to say which one to use:
+
+```bash
+DEMO_LLM_MODEL=openai/gpt-oss-20b uv run python run.py
+```
+
+Reasoning models need a second setting. They spend a hidden thinking budget
+before answering, and a reply truncated mid-thought arrives with **empty
+content** — the demo then reports `model hit the 2048-token limit`. Raise the
+budget for those:
+
+```bash
+DEMO_MAX_TOKENS=8192 uv run python run.py
+```
+
+Note that this trades away the demo's interactivity. Measured on an M5 Max,
+`gpt-oss-20b` answers in about 10 s, while a reasoning model such as
+`Qwen3.8-27B` spends 600–7100 tokens per call on hidden thought and takes
+60–350 s — the optimizer keeps running throughout, but the LLM no longer
+keeps up with the 1 s call interval. `reasoning_effort` does not help here:
+LM Studio 0.4.15 drops it before it reaches the model's chat template.
 
 ## Running the demo
 
