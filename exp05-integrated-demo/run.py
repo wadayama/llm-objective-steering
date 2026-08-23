@@ -58,8 +58,8 @@ from steering import (
 # =====================================================================
 N_MC_DISPLAY = 50_000
 N_MC_GRAD = 10_000
-STEPS_PER_FRAME = 3
-DUAL_EVERY_STEPS = 9      # dual update cadence (multiple of STEPS_PER_FRAME)
+STEPS_PER_FRAME = 5
+DUAL_EVERY_STEPS = 10     # dual update cadence (multiple of STEPS_PER_FRAME)
 HISTORY_WINDOW = 200
 K_HIST = 8
 LLM_CALL_INTERVAL = 1.0
@@ -387,7 +387,8 @@ class LLMController:
                     "(raise DEMO_MAX_TOKENS)"
                     if choice.finish_reason == "length"
                     else "model returned an empty reply")
-            spec_new, tau_new, tau_ch_new, p_cmd, reasoning = parse_response(raw)
+            (spec_new, tau_new, tau_ch_new, p_cmd,
+             reasoning, escalated) = parse_response(raw)
 
             # Guardrail: unconstrained min_power = "shut everything down",
             # which is never a sane translation. Reject the declaration
@@ -408,12 +409,20 @@ class LLMController:
                         self.call_no += 1
                         apply_tau = False
                     else:
-                        if p_cmd is not None:
+                        if escalated is not None:
+                            # An escalation is a discrete request for more of a
+                            # resource, not a servo command, so it bypasses the
+                            # EMA that damps ordinary budget commands.
+                            self.p_total = escalated
+                        elif p_cmd is not None:
                             self.p_total = EMA_ALPHA_P * p_cmd + (1 - EMA_ALPHA_P) * self.p_total
                         self.spec = ema_merge_spec(spec_new, self.spec,
                                                    EMA_ALPHA_PARAM, self.p_total)
                         self.last_reasoning = reasoning
-                        self.llm_status = f"OK [{self.spec.family}]"
+                        self.llm_status = (
+                            f"OK [{self.spec.family}]"
+                            + ("" if escalated is None
+                               else f" — escalated P_total to {escalated:.0f}"))
                         self.hist.add(self.call_no, self.spec.describe(), cdesc,
                                       kpis, status)
                         self.call_no += 1

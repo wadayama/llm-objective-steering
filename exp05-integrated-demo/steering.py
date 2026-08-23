@@ -61,6 +61,19 @@ do NOT need to regulate them call-by-call.
   "min_power" you normally do NOT need to lower P_total; declare the
   constraint and let the optimizer find the minimal power itself.
 
+## Escalation (a first-class declaration)
+Besides the objective and the constraints, you may declare an ESCALATION:
+  "escalate": {"resource": "P_total", "request": <number>, "reason": "<why>"}
+An escalation asks the system for more of a resource than the current budget
+allows. It is the declaration you use when the constraints you were asked to
+enforce cannot be met with what you have -- that is, when the status is
+INFEASIBLE. Regulation cannot resolve an INFEASIBLE status; only a changed
+declaration can.
+Unlike an ordinary "P_total" command, which is smoothed as a servo signal, an
+escalation is a discrete request and is applied IN FULL on the next step:
+"escalate" with request R sets the budget cap to exactly R. Ask for the amount
+you actually believe is needed, not a cautious step towards it.
+
 ## Your task
 Translate the active policy into (objective family, constraints). Prefer the
 direct expression: e.g. "minimize power while keeping rate above X" ->
@@ -72,6 +85,7 @@ Respond ONLY with a JSON object (no markdown fences, no extra text). Examples:
 {"objective": {"family": "soft_min", "beta": 10}, "reasoning": "equalize rates"}
 {"objective": {"family": "weighted_sum", "weights": [1,1,1,1,1,1,3,3]}, "reasoning": "prioritize ch 6,7"}
 {"objective": {"family": "power_target", "targets": [0,0,0,0,10,10,10,10]}, "reasoning": "shut down channels 0-3, focus power on 4-7"}
+{"objective": {"family": "min_power"}, "constraints": [{"metric": "sum_rate", "min": 15}], "escalate": {"resource": "P_total", "request": 80, "reason": "status INFEASIBLE: 15 bits is unreachable within a cap of 40"}}
 """
 
 HISTORY_SECTION = """
@@ -249,7 +263,17 @@ def parse_response(raw: str):
     if p_total is not None:
         p_total = float(np.clip(float(p_total), 1.0, 100.0))
 
-    return spec, tau_bits, tau_ch_bits, p_total, data.get("reasoning", "")
+    # An escalation lands on the same knob as P_total but is returned
+    # separately, because it is actuated in full rather than smoothed.
+    esc = data.get("escalate", None)
+    escalated = None
+    if isinstance(esc, dict) and esc.get("resource") == "P_total":
+        req = esc.get("request", None)
+        if req is not None:
+            escalated = float(np.clip(float(req), 1.0, 100.0))
+
+    return (spec, tau_bits, tau_ch_bits, p_total,
+            data.get("reasoning", ""), escalated)
 
 
 def ema_merge_spec(spec_new: ObjectiveSpec, spec_old: ObjectiveSpec,

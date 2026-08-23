@@ -27,6 +27,19 @@ Objective families the LLM can select:
 Constraints it can declare: `sum_rate >= τ` (floor on the total rate) and
 `min_channel_mi >= τ_ch` (floor on every channel's MI).
 
+When the optimizer certifies INFEASIBLE, no amount of regulation can help —
+only a changed declaration can. The LLM therefore has one more move, an
+**escalation**:
+
+```json
+{"escalate": {"resource": "P_total", "request": 80, "reason": "..."}}
+```
+
+An ordinary `P_total` command is smoothed (`applied = 0.5*command +
+0.5*current`) because it is a servo signal. An escalation is a discrete
+request and is applied **in full** — a distinction that turns out to decide
+whether the system escapes infeasibility at all, not just how fast.
+
 Every LLM output passes through clamping, normalization, and projection, so
 **feasibility holds by construction** no matter what the model emits. If the
 declared constraints cannot be met, the system returns INFEASIBLE *with a
@@ -160,7 +173,7 @@ Policies worth trying:
 | Policy | What should happen |
 |---|---|
 | `Minimize total transmit power while keeping the total data rate above 10 bits` | `min_power` plus a constraint declaration; power descends on its own and settles at the boundary as CONVERGED |
-| `Keep the total data rate above 15 bits with minimal power` | infeasible within a budget of 40 → μ climbs sharply → INFEASIBLE → the LLM raises the budget and recovers |
+| `Keep the total data rate above 15 bits with minimal power` | infeasible within a budget of 40 → μ climbs sharply → INFEASIBLE → the LLM **escalates** for more budget and recovers |
 | `minimize total power while keeping MI larger than 1.0 bit for all the channels` | declares the per-channel constraint (vector multipliers) |
 | `Ensure all channels achieve similar data rates` | `soft_min` |
 | `Equalize transmit power across all channels` | `power_target` with equal targets |
