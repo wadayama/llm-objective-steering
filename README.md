@@ -56,6 +56,12 @@ exp05-integrated-demo/     the interactive demo
 └── steering.py            System 2 (prompt construction, response parsing,
                            control history)
 
+exp01-objective-steering/  objective families against fixed linear weights
+exp02-system2-memory/      how far prompting gets when the LLM must regulate
+                           a constraint itself
+exp03-auglag/              declaring the constraint instead, enforced by the
+                           augmented Lagrangian
+
 bench/                     the evaluation suite (see bench/README.md)
 ├── scenarios.py           13 scenarios in six categories
 ├── runner.py              translation and episode modes, plus the oracle
@@ -80,8 +86,9 @@ exp09-scale/               the channel-count sweep, N = 8 to 64
                            (see exp09-scale/README.md)
 ```
 
-Raw results, the research write-ups, and the exp01–exp04 scripts behind the
-design-rationale measurements stay out of this repository.
+Every experiment behind a number in the paper is here. Raw results and the
+research write-ups are not, nor is exp04, whose verbal-report study the
+paper does not draw on.
 
 Each directory runs on its own:
 
@@ -92,11 +99,15 @@ cd exp08-baseline    && uv run python run_comparison.py --model <id> --tag <name
 cd exp06-arbitration && uv run python run_arbitration.py --tag <name>
 cd exp07-certificate && uv run python verify_certificate_seeds.py
 cd exp09-scale       && uv run python run_scale.py
+cd exp01-objective-steering && uv run python verify_system1.py
+cd exp03-auglag      && uv run python verify_auglag.py
 ```
 
 Anything that calls a model needs an OpenAI-compatible server on
-`localhost:1234`; see [Requirements](#requirements) below. The certificate
-check and the scaling sweep audit the optimizer alone and need no model.
+`localhost:1234`; see [Requirements](#requirements) below. The four
+verifications that audit the optimizer alone — `verify_system1.py`,
+`verify_auglag.py`, `verify_certificate_seeds.py` and `run_scale.py` — need
+no model at all.
 
 ## Requirements
 

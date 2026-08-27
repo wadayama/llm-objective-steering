@@ -1,10 +1,8 @@
 # =====================================================================
-# Publication policy: this repository publishes the demo and the code
-# behind the paper's results — the benchmark suite with its system
-# prompt, the frozen keyword baseline with its paraphrase set, and the
-# arbitration, certificate and scaling experiments. What stays local is
-# the raw results, the research write-ups (notes/, revision_notes/), and
-# the exp01-exp04 scripts behind the design-rationale measurements.
+# Publication policy: this repository publishes the demo and every
+# experiment script behind a number in the paper. What stays local is the
+# raw results, the research write-ups (notes/, revision_notes/), and
+# exp04, whose verbal-report study the paper does not draw on.
 #
 # Whitelist approach: ignore everything, then re-include the published
 # files explicitly. New files therefore default to NOT published; add
@@ -27,6 +25,34 @@ exp05-integrated-demo/*
 !exp05-integrated-demo/core.py
 !exp05-integrated-demo/run.py
 !exp05-integrated-demo/steering.py
+
+# ---- objective families vs fixed weights ----
+!exp01-objective-steering/
+exp01-objective-steering/*
+!exp01-objective-steering/README.md
+!exp01-objective-steering/core.py
+!exp01-objective-steering/run.py
+!exp01-objective-steering/verify_system1.py
+
+# ---- how far prompting gets when the LLM must regulate ----
+!exp02-system2-memory/
+exp02-system2-memory/*
+!exp02-system2-memory/README.md
+!exp02-system2-memory/core.py
+!exp02-system2-memory/run_batch.py
+!exp02-system2-memory/run_c_ablation.py
+!exp02-system2-memory/run_prompt_ablation.py
+!exp02-system2-memory/steering.py
+
+# ---- declaring the constraint instead: the augmented Lagrangian ----
+!exp03-auglag/
+exp03-auglag/*
+!exp03-auglag/README.md
+!exp03-auglag/core.py
+!exp03-auglag/run_batch.py
+!exp03-auglag/run_infeasible.py
+!exp03-auglag/steering.py
+!exp03-auglag/verify_auglag.py
 
 # ---- the benchmark suite, including the system prompt in steering.py ----
 # Results stay local; the scenarios and the harness that produces them do not.
@@ -85,6 +111,15 @@ exp09-scale/*
 # ---- the scripts above write here; the results themselves stay local ----
 # git will not look inside an ignored directory, so the directory has to be
 # re-included before the placeholder inside it can be
+!exp01-objective-steering/results/
+exp01-objective-steering/results/*
+!exp01-objective-steering/results/.gitkeep
+!exp02-system2-memory/results/
+exp02-system2-memory/results/*
+!exp02-system2-memory/results/.gitkeep
+!exp03-auglag/results/
+exp03-auglag/results/*
+!exp03-auglag/results/.gitkeep
 !exp06-arbitration/results/
 exp06-arbitration/results/*
 !exp06-arbitration/results/.gitkeep
