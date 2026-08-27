@@ -69,10 +69,19 @@ exp08-baseline/            the non-LLM baseline (see exp08-baseline/README.md)
 ├── policies.py            those seven policies verbatim, and 21 paraphrases
 │                          authored afterwards without consulting the rules
 └── run_comparison.py      scores both on both sets, by the same criteria
+
+exp06-arbitration/         does the LLM act on a certified infeasibility?
+                           (see exp06-arbitration/README.md)
+exp07-certificate/         does the reported optimality indicator actually
+                           bound the gap? An optimum computed independently,
+                           by quadrature and the KKT condition
+                           (see exp07-certificate/README.md)
+exp09-scale/               the channel-count sweep, N = 8 to 64
+                           (see exp09-scale/README.md)
 ```
 
-Raw results, research write-ups, and the remaining experiment scripts stay
-out of this repository.
+Raw results, the research write-ups, and the exp01–exp04 scripts behind the
+design-rationale measurements stay out of this repository.
 
 Each directory runs on its own:
 
@@ -80,10 +89,14 @@ Each directory runs on its own:
 cd exp05-integrated-demo && uv run python run.py            # the demo
 cd bench             && uv run python runner.py             # the evaluation suite
 cd exp08-baseline    && uv run python run_comparison.py --model <id> --tag <name>
+cd exp06-arbitration && uv run python run_arbitration.py --tag <name>
+cd exp07-certificate && uv run python verify_certificate_seeds.py
+cd exp09-scale       && uv run python run_scale.py
 ```
 
-All three need an OpenAI-compatible server on `localhost:1234`; see
-[Requirements](#requirements) below.
+Anything that calls a model needs an OpenAI-compatible server on
+`localhost:1234`; see [Requirements](#requirements) below. The certificate
+check and the scaling sweep audit the optimizer alone and need no model.
 
 ## Requirements
 

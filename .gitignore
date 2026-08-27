@@ -1,10 +1,10 @@
 # =====================================================================
-# Publication policy: this repository publishes what the paper says is
-# available — the demo, the benchmark suite with its system prompt, and
-# the frozen keyword baseline with its paraphrase set. Everything else
-# stays local: research write-ups (notes/, revision_notes/), the
-# experiment scripts for exp01-exp04 and exp06-exp09, and all raw
-# results, which the paper does not claim to release.
+# Publication policy: this repository publishes the demo and the code
+# behind the paper's results — the benchmark suite with its system
+# prompt, the frozen keyword baseline with its paraphrase set, and the
+# arbitration, certificate and scaling experiments. What stays local is
+# the raw results, the research write-ups (notes/, revision_notes/), and
+# the exp01-exp04 scripts behind the design-rationale measurements.
 #
 # Whitelist approach: ignore everything, then re-include the published
 # files explicitly. New files therefore default to NOT published; add
@@ -46,3 +46,51 @@ exp08-baseline/*
 !exp08-baseline/keyword_baseline.py
 !exp08-baseline/policies.py
 !exp08-baseline/run_comparison.py
+
+# ---- arbitration: does the LLM act on a certified infeasibility? ----
+!exp06-arbitration/
+exp06-arbitration/*
+!exp06-arbitration/README.md
+!exp06-arbitration/common.py
+!exp06-arbitration/core.py
+!exp06-arbitration/plot_escalation.py
+!exp06-arbitration/plot_stiffness.py
+!exp06-arbitration/run_arbitration.py
+!exp06-arbitration/run_probe.py
+!exp06-arbitration/steering.py
+!exp06-arbitration/verify_stiffness.py
+
+# ---- the independent check on the optimality indicator ----
+!exp07-certificate/
+exp07-certificate/*
+!exp07-certificate/README.md
+!exp07-certificate/baseline_anchor.py
+!exp07-certificate/core.py
+!exp07-certificate/reference.py
+!exp07-certificate/verify_certificate.py
+!exp07-certificate/verify_certificate_seeds.py
+!exp07-certificate/waterfilling.py
+
+# ---- the channel-count sweep ----
+!exp09-scale/
+exp09-scale/*
+!exp09-scale/README.md
+!exp09-scale/core.py
+!exp09-scale/reference.py
+!exp09-scale/run_scale.py
+!exp09-scale/run_scale_llm.py
+!exp09-scale/scale_profile.py
+!exp09-scale/steering.py
+
+# ---- the scripts above write here; the results themselves stay local ----
+# git will not look inside an ignored directory, so the directory has to be
+# re-included before the placeholder inside it can be
+!exp06-arbitration/results/
+exp06-arbitration/results/*
+!exp06-arbitration/results/.gitkeep
+!exp07-certificate/results/
+exp07-certificate/results/*
+!exp07-certificate/results/.gitkeep
+!exp09-scale/results/
+exp09-scale/results/*
+!exp09-scale/results/.gitkeep
