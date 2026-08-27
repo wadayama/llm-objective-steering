@@ -26,6 +26,10 @@ T_VAL = SIGMA2 / 2.0  # = 0.5
 P_TOTAL_DEFAULT = 40.0
 LAMBDA_MIN = 0.1  # lower bound on lambda_i to prevent zero-gradient trap
 ALPHA_EPS = 1e-4  # regularizer for alpha_fair utility near MI = 0
+# A declared sum-rate floor is clipped to this fraction of the 2N-bit
+# ceiling: demanding the ceiling itself is never attainable at finite power.
+# At N = 8 this is 15.5, the value that was hard-coded before N was swept.
+SR_CEILING_FRACTION = 0.96875
 
 QPSK_CONST = torch.tensor(
     [[+1, +1], [+1, -1], [-1, +1], [-1, -1]],
@@ -307,7 +311,8 @@ class AugLagState:
             self.mu = 0.0
             self.g_prev = None
         else:
-            self.tau_bits = float(np.clip(tau_bits, 0.0, 15.5))
+            self.tau_bits = float(np.clip(tau_bits, 0.0,
+                                          SR_CEILING_FRACTION * 2.0 * N))
 
     def dual_update(self, sr_bits_meas: float,
                     mi_bits_meas: np.ndarray | None = None) -> float:

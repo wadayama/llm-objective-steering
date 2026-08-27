@@ -17,8 +17,8 @@ from core import N, OBJECTIVE_FAMILIES, ObjectiveSpec
 
 NATS2BITS = 1.0 / math.log(2)
 
-SYSTEM_PROMPT_BASE = """\
-You are an autonomous controller for a QPSK parallel communication system with N=8 independent sub-channels.
+SYSTEM_PROMPT_TEMPLATE = """\
+You are an autonomous controller for a QPSK parallel communication system with N={n} independent sub-channels.
 You are called periodically to enforce a user-defined policy.
 
 ## System model
@@ -33,10 +33,10 @@ enforced by the optimizer itself (augmented Lagrangian): once declared, you
 do NOT need to regulate them call-by-call.
 
 ## Objective families
-1. "weighted_sum": J = sum_i w_i * MI_i  (throughput / priorities; params: "weights", 8 numbers)
+1. "weighted_sum": J = sum_i w_i * MI_i  (throughput / priorities; params: "weights", {n} numbers)
 2. "alpha_fair": fairness on MI values (params: "alpha" in [0.5, 20])
 3. "soft_min": maximize the minimum MI (params: "beta" in [1, 50], 10 typical)
-4. "power_target": drive powers to explicit targets (params: "targets", 8 numbers)
+4. "power_target": drive powers to explicit targets (params: "targets", {n} numbers)
 5. "min_power": MINIMIZE the TOTAL power of ALL channels together. Use for
    system-wide power-saving policies, and ALWAYS together with a declared
    constraint that protects performance — an unconstrained min_power would
@@ -88,6 +88,17 @@ Respond ONLY with a JSON object (no markdown fences, no extra text). Examples:
 {"objective": {"family": "min_power"}, "constraints": [{"metric": "sum_rate", "min": 15}], "escalate": {"resource": "P_total", "request": 80, "reason": "status INFEASIBLE: 15 bits is unreachable within a cap of 40"}}
 """
 
+def system_prompt_base(n: int | None = None) -> str:
+    """The base prompt with the channel count filled in.
+
+    A plain replace and not .format(): the prompt is full of JSON braces.
+    Rendering at call time rather than at import means an experiment that
+    rebinds the channel count gets a prompt that agrees with it, instead of
+    asking the model for eight numbers and then rejecting the eight it sends.
+    """
+    return SYSTEM_PROMPT_TEMPLATE.replace("{n}", str(N if n is None else n))
+
+
 HISTORY_SECTION = """
 ## Control history (feedback)
 The user message includes a "Recent control history" table: your past actions
@@ -122,7 +133,7 @@ You never need to compute or verify these signals yourself.
 
 def system_prompt(condition: str) -> str:
     """condition: 'semantic' (signals explained) or 'plain' (signals bare)."""
-    s = SYSTEM_PROMPT_BASE + HISTORY_SECTION
+    s = system_prompt_base() + HISTORY_SECTION
     if condition == "semantic":
         s += STATUS_SEMANTIC_SECTION
     elif condition != "plain":
