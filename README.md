@@ -1,7 +1,8 @@
-# LLM Objective Steering — Interactive Demo
+# LLM Objective Steering
 
-An interactive demo of a two-system architecture for power allocation over
-N=8 parallel QPSK-AWGN channels. The LLM **declares an objective and
+A two-system architecture for power allocation over N=8 parallel QPSK-AWGN
+channels, with an interactive demo, the evaluation suite it is measured on,
+and the rule-based baseline it is compared against. The LLM **declares an objective and
 constraints**; a projected-gradient optimizer enforces them and certifies the
 result. Mutual information (MI) is estimated by Monte Carlo, and the power
 allocation $P_i = \lambda_i^2$ is optimized online.
@@ -45,16 +46,44 @@ Every LLM output passes through clamping, normalization, and projection, so
 declared constraints cannot be met, the system returns INFEASIBLE *with a
 certificate* rather than failing silently.
 
-This repository contains only what is needed to run the demo.
+## What is here
 
 ```
-exp05-integrated-demo/
-├── run.py        UI, LLM controller, optimizer loop
-├── core.py       System 1 (MI estimation, objectives, projection,
-│                 augmented Lagrangian, KKT residuals)
-└── steering.py   System 2 (prompt construction, response parsing,
-                  control history)
+exp05-integrated-demo/     the interactive demo
+├── run.py                 UI, LLM controller, optimizer loop
+├── core.py                System 1 (MI estimation, objectives, projection,
+│                          augmented Lagrangian, KKT residuals)
+└── steering.py            System 2 (prompt construction, response parsing,
+                           control history)
+
+bench/                     the evaluation suite (see bench/README.md)
+├── scenarios.py           13 scenarios in six categories
+├── runner.py              translation and episode modes, plus the oracle
+└── core.py, steering.py   System 1 and 2, frozen as of exp05.
+                           steering.py holds the system prompt used for
+                           every policy and every model.
+
+exp08-baseline/            the non-LLM baseline (see exp08-baseline/README.md)
+├── keyword_baseline.py    a rule-based translator, written against the seven
+│                          canonical policies and then frozen
+├── policies.py            those seven policies verbatim, and 21 paraphrases
+│                          authored afterwards without consulting the rules
+└── run_comparison.py      scores both on both sets, by the same criteria
 ```
+
+Raw results, research write-ups, and the remaining experiment scripts stay
+out of this repository.
+
+Each directory runs on its own:
+
+```bash
+cd exp05-integrated-demo && uv run python run.py            # the demo
+cd bench             && uv run python runner.py             # the evaluation suite
+cd exp08-baseline    && uv run python run_comparison.py --model <id> --tag <name>
+```
+
+All three need an OpenAI-compatible server on `localhost:1234`; see
+[Requirements](#requirements) below.
 
 ## Requirements
 

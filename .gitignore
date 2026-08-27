@@ -1,8 +1,10 @@
 # =====================================================================
-# Publication policy: this repository publishes only the minimum set
-# needed to RUN THE INTEGRATED DEMO. Everything else stays local —
-# research write-ups (notes/, revision_notes/), the experiment scripts
-# for exp01-exp04, the benchmark suite, and all raw results.
+# Publication policy: this repository publishes what the paper says is
+# available — the demo, the benchmark suite with its system prompt, and
+# the frozen keyword baseline with its paraphrase set. Everything else
+# stays local: research write-ups (notes/, revision_notes/), the
+# experiment scripts for exp01-exp04 and exp06-exp09, and all raw
+# results, which the paper does not claim to release.
 #
 # Whitelist approach: ignore everything, then re-include the published
 # files explicitly. New files therefore default to NOT published; add
@@ -25,3 +27,22 @@ exp05-integrated-demo/*
 !exp05-integrated-demo/core.py
 !exp05-integrated-demo/run.py
 !exp05-integrated-demo/steering.py
+
+# ---- the benchmark suite, including the system prompt in steering.py ----
+# Results stay local; the scenarios and the harness that produces them do not.
+!bench/
+bench/*
+!bench/README.md
+!bench/core.py
+!bench/runner.py
+!bench/scenarios.py
+!bench/steering.py
+
+# ---- the frozen keyword baseline and the 21 paraphrases ----
+!exp08-baseline/
+exp08-baseline/*
+!exp08-baseline/README.md
+!exp08-baseline/core.py
+!exp08-baseline/keyword_baseline.py
+!exp08-baseline/policies.py
+!exp08-baseline/run_comparison.py
